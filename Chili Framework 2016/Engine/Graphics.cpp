@@ -66,9 +66,9 @@ Graphics::Graphics( HWNDKey& key )
 	createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 #endif
-	
+
 	// create device and front/back buffers
-	if( FAILED( hr = D3D11CreateDeviceAndSwapChain( 
+	if( FAILED( hr = D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -89,14 +89,14 @@ Graphics::Graphics( HWNDKey& key )
 	ComPtr<ID3D11Resource> pBackBuffer;
 	if( FAILED( hr = pSwapChain->GetBuffer(
 		0,
-		__uuidof( ID3D11Texture2D ),
+		__uuidof(ID3D11Texture2D),
 		(LPVOID*)&pBackBuffer ) ) )
 	{
 		throw CHILI_GFX_EXCEPTION( hr,L"Getting back buffer" );
 	}
 
 	// create a view on backbuffer that we can render to
-	if( FAILED( hr = pDevice->CreateRenderTargetView( 
+	if( FAILED( hr = pDevice->CreateRenderTargetView(
 		pBackBuffer.Get(),
 		nullptr,
 		&pRenderTargetView ) ) )
@@ -163,7 +163,7 @@ Graphics::Graphics( HWNDKey& key )
 	{
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating pixel shader" );
 	}
-	
+
 
 	/////////////////////////////////////////////////
 	// create vertex shader for framebuffer
@@ -176,7 +176,7 @@ Graphics::Graphics( HWNDKey& key )
 	{
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating vertex shader" );
 	}
-	
+
 
 	//////////////////////////////////////////////////////////////
 	// create and fill vertex buffer with quad for rendering frame
@@ -201,7 +201,7 @@ Graphics::Graphics( HWNDKey& key )
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating vertex buffer" );
 	}
 
-	
+
 	//////////////////////////////////////////
 	// create input layout for fullscreen quad
 	const D3D11_INPUT_ELEMENT_DESC ied[] =
@@ -236,8 +236,8 @@ Graphics::Graphics( HWNDKey& key )
 	}
 
 	// allocate memory for sysbuffer (16-byte aligned for faster access)
-	pSysBuffer = reinterpret_cast<Color*>( 
-		_aligned_malloc( sizeof( Color ) * Graphics::ScreenWidth * Graphics::ScreenHeight,16u ) );
+	pSysBuffer = reinterpret_cast<Color*>(
+		_aligned_malloc( sizeof( Color ) * Graphics::ScreenWidth * Graphics::ScreenHeight,16u ));
 }
 
 Graphics::~Graphics()
@@ -252,6 +252,11 @@ Graphics::~Graphics()
 	if( pImmediateContext ) pImmediateContext->ClearState();
 }
 
+RectI Graphics::GetScreenRect()
+{
+	return{ 0,ScreenWidth,0,ScreenHeight };
+}
+
 void Graphics::EndFrame()
 {
 	HRESULT hr;
@@ -263,14 +268,14 @@ void Graphics::EndFrame()
 		throw CHILI_GFX_EXCEPTION( hr,L"Mapping sysbuffer" );
 	}
 	// setup parameters for copy operation
-	Color* pDst = reinterpret_cast<Color*>(mappedSysBufferTexture.pData );
+	Color* pDst = reinterpret_cast<Color*>(mappedSysBufferTexture.pData);
 	const size_t dstPitch = mappedSysBufferTexture.RowPitch / sizeof( Color );
 	const size_t srcPitch = Graphics::ScreenWidth;
 	const size_t rowBytes = srcPitch * sizeof( Color );
 	// perform the copy line-by-line
 	for( size_t y = 0u; y < Graphics::ScreenHeight; y++ )
 	{
-		memcpy( &pDst[ y * dstPitch ],&pSysBuffer[y * srcPitch],rowBytes );
+		memcpy( &pDst[y * dstPitch],&pSysBuffer[y * srcPitch],rowBytes );
 	}
 	// release the adapter memory
 	pImmediateContext->Unmap( pSysBufferTexture.Get(),0u );
@@ -301,22 +306,6 @@ void Graphics::EndFrame()
 	}
 }
 
-void Graphics::BeginFrame()
-{
-	// clear the sysbuffer
-	memset( pSysBuffer,0u,sizeof( Color ) * Graphics::ScreenHeight * Graphics::ScreenWidth );
-}
-
-void Graphics::PutPixel( int x,int y,Color c )
-{
-	assert( x >= 0 );
-	assert( x < int( Graphics::ScreenWidth ) );
-	assert( y >= 0 );
-	assert( y < int( Graphics::ScreenHeight ) );
-	pSysBuffer[Graphics::ScreenWidth * y + x] = c;
-}
-
-
 //////////////////////////////////////////////////
 //           Graphics Exception
 Graphics::Exception::Exception( HRESULT hr,const std::wstring& note,const wchar_t* file,unsigned int line )
@@ -335,11 +324,11 @@ std::wstring Graphics::Exception::GetFullMessage() const
 	return    (!errorName.empty() ? std::wstring( L"Error: " ) + errorName + L"\n"
 		: empty)
 		+ (!errorDesc.empty() ? std::wstring( L"Description: " ) + errorDesc + L"\n"
-			: empty)
+		: empty)
 		+ (!note.empty() ? std::wstring( L"Note: " ) + note + L"\n"
-			: empty)
+		: empty)
 		+ (!location.empty() ? std::wstring( L"Location: " ) + location
-			: empty);
+		: empty);
 }
 
 std::wstring Graphics::Exception::GetErrorName() const
